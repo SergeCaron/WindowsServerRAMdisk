@@ -1,5 +1,5 @@
 ##******************************************************************
-## Revision date: 2024.03.20
+## Revision date: 2024.05.13
 ##
 ## This script installs a RAM disk .
 ##
@@ -7,6 +7,7 @@
 ##		2023.04.10:	Cleanup ;-)
 ##		2024.01.14: Multiple bugs found following Windows Server
 ##					2022 January 2024 Cumulative update (don't ask...)
+##		2024.05.13:	iSCSI Virtual Disks are sometimes created OffLine
 ##
 ## Usage:
 ##	CreateCache [-RAMDiskLabel SomeLabel] [-RAMDiskSize Storage] -RAMDiskLetter SingleDriveLetter
@@ -204,10 +205,13 @@ Function CreateCache {
 						-and (($Cache.PartitionStyle -eq "RAW") -or ($Cache.PartitionStyle -eq "GPT")) ) {
 					# There is exactly one disk object with these attributes.
 					Try {
+						# The disk may be presented with the "Offline" status: clear this indicator
+						$Cache | Set-Disk -IsOffline $False | Out-Null
 						# Initialize and format the drive.
 						$Cache = $Cache | Initialize-Disk -PartitionStyle GPT -PassThru -ErrorAction Stop `
-						| New-Partition -DriveLetter $RAMDiskLetter -UseMaximumSize -ErrorAction Stop `
-						| Format-Volume -FileSystem NTFS -NewFileSystemLabel "$RAMDiskLabel" -Confirm:$false -ErrorAction Stop
+						| New-Partition -UseMaximumSize -ErrorAction Stop
+						$Cache | Format-Volume -FileSystem NTFS -NewFileSystemLabel "$RAMDiskLabel" -Confirm:$false -ErrorAction Stop | Out-Null
+						$Cache | Set-Partition -NewDriveLetter $RAMDiskLetter
                                         
 						# Create a root folder in this drive
 						$ThisRoot = New-Item -Path $("$RAMDiskLetter" + ":\" + "$RAMDiskLabel") -ItemType Directory -ErrorAction SilentlyContinue
