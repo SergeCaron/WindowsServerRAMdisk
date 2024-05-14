@@ -1,6 +1,6 @@
 
 ##******************************************************************
-## Revision date: 2024.03.18
+## Revision date: 2024.05.13
 ##
 ## This script installs a RAM disk .
 ##
@@ -9,6 +9,7 @@
 ##		2023.05.02: Add Privilege elevation
 ##		2023.05.03: Pause before switching to the server's console
 ##		2024.03.18: Revision
+##		2024.05.10: Location of InstallFolder
 ##
 ## Usage:
 ##	This script is invoked without any parameter
@@ -39,7 +40,10 @@ param (
 Try {
 
 	$PLEXInstallFolder = $(Get-ItemProperty -Path "HKCU:\Software\Plex, Inc.\Plex Media Server" `
-			-Name InstallFolder  -ErrorAction Stop).InstallFolder
+			-Name InstallFolder  -ErrorAction SilentlyContinue).InstallFolder
+	# Sometime after Version 1.31.3, this was moved to HKLM
+	If ($Null -eq $PLEXInstallFolder) { $PLEXInstallFolder = $(Get-ItemProperty -Path "HKLM:\Software\Plex, Inc.\Plex Media Server" `
+			-Name InstallFolder  -ErrorAction Stop).InstallFolder }
 
 	$PLEXServer = "Plex Media Server"
 	# Presume that it is coincidental that the Registry Key and the PLEX server binary have the same name
